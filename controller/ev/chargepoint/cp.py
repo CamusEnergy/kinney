@@ -102,23 +102,28 @@ def get_file():
 
 def save_to_file(load):
     global _DATAFILE
+    sg_load = load['sgLoad']
     if DEBUG:
         print(
-            str(time.time()) +
+            "time: " + str(time.time()) +
             "  total_load @ sgID(" +
             str(load["sgID"]) + ") = " +
-            load['sgLoad'] + "\n"
+            sg_load + "\n"
         )
-    datafile = get_file()
-    if DEBUG:
-        print("Writing to file " + str(datafile))
+    if (sg_load == '0.000'):
+        print("Skip writing to file, current load zero\n")
+        return
+    else:
+        datafile = get_file()
+        if DEBUG:
+            print("Writing to file " + str(datafile))
 
-    datafile.write(json.dumps({
-        'ts': time.time(),
-        'data': zeep.helpers.serialize_object(load),
-    }))
-    datafile.flush()
-    return
+        datafile.write(json.dumps({
+            'ts': time.time(),
+        '   data': zeep.helpers.serialize_object(load),
+        }))
+        datafile.flush()
+        return
 
 
 def init():
