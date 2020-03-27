@@ -280,10 +280,9 @@ def poll_load(id):
             load = _get_load(client, search_query)
             if _SAVE_TO_FILE:
                 save_to_file(load)
-            else:
-                if _STREAM:
-                    # TODO
-                    print("Streaming not yet implemented")
+            elif _STREAM:
+                # TODO
+                print("Streaming not yet implemented")
         except Exception as ee:
             print("Error: poll_load encountered exception: " + str(ee))
         # seconds
