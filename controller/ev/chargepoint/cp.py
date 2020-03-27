@@ -120,7 +120,7 @@ def save_to_file(load):
 
         datafile.write(json.dumps({
             'ts': time.time(),
-        '   data': zeep.helpers.serialize_object(load),
+            'data': zeep.helpers.serialize_object(load),
         }))
         datafile.flush()
         return
