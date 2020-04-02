@@ -6,13 +6,13 @@
 KINNEY=github.com/CamusEnergy/kinney
 
 # Base go inside of module, to avoid collisions with other projects.
-ifndef $(GOPATH)
+ifndef GOPATH
 	GOMOD=$(shell go env GOMOD)
   GOPATH=$(dir ${GOMOD})go
   export GOPATH
 endif
 
-ifndef $(GOBIN)
+ifndef GOBIN
   GOBIN=$(GOPATH)/bin
 	export GOBIN
 endif
