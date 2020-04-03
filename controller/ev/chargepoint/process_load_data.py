@@ -1,5 +1,9 @@
+#!/usr/bin/python
+
+import getopt
 import json
 import os
+import sys 
 
 from classes.charge_session import ChargeSession
 from classes.full_port import FullPort
@@ -50,7 +54,8 @@ def process_day(dayDir):
     print("CSV filename: " + str(csv_filename))
     for hh in os.listdir(dayDir):
         print("hour = " + str(hh))
-        if not hh.endswith(".csv"):
+        if ((not hh.endswith(".csv")) and
+            (not hh.endswith(".xls"))):
             hourDir = os.path.join(dayDir,hh)
             for dd in os.listdir(hourDir):
                 if (dd.startswith("load2") and dd.endswith(".json")):
@@ -59,4 +64,28 @@ def process_day(dayDir):
                     process_file(filename, csv_filename)
                 else:
                     continue
+
+def main(argv):
+   inputDayDir= ''
+   outputfile = ''
+   try:
+      opts, args = getopt.getopt(argv,"hi:o:",["iDir=","ofile="])
+   except getopt.GetoptError:
+      print("process_load_data.py -i <inputDayDir> -o <outputfile>")
+      sys.exit(2)
+   for opt, arg in opts:
+      if opt == '-h':
+         print("process_load_data.py -i <inputDayDir> -o <outputfile>")
+         sys.exit()
+      elif opt in ("-i", "--iDir"):
+         inputDayDir = arg
+      elif opt in ("-o", "--ofile"):
+         outputfile = arg
+   print("Input Day Directory is " + inputDayDir)
+   ## need to check it ends with csv if in the same directory etc.
+   print("Ignoring Output file: " + outputfile)
+   process_day(inputDayDir)
+
+if __name__ == "__main__":
+   main(sys.argv[1:])
 
