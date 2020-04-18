@@ -111,35 +111,17 @@ class BaseLoad():
         
     def get_load_need(self, level=Curtail.GREEN, context=None):
         # TODO consider context such as temperature, pandemic etc
-        print(self.ID)
-        print(self.sub_loads)
-        load_need = 0.0
         if (len(self.sub_loads) == 0):
             #leaf load device
-            if ((self.safety_critical) or
-                Curtail.GREEN or
-                (Curtail.BROWNOUT and (not self.deferrable))):
-                load_need = self.load
+            load_need = self.load
+            if ((level == Curtail.GREEN) or
+                self.safety_critical or
+                (level == Curtail.BROWNOUT) and (not self.deferrable)):
+                return self.load
             else:
-                load_need = 0
+                return 0.0    
         else:  
+            load_need = 0.0
             for sb in self.sub_loads:
-                load_need = sb.get_load_need(level=level, context=context)
-        return load_need
-
-
-
- 
-
-aa = BaseLoad(1, 100)
-bb = BaseLoad(2, 20, True)
-bb.load= 20
-cc = BaseLoad(3, 30)
-cc.load = 30
-aa.add_sub_load(bb)
-aa.add_sub_load(cc)
-print(aa.get_load())
-print("Green")
-print(aa.get_load_need())
-print("Black")
-print(aa.get_load_need(level=Curtail.BLACKOUT))
+                load_need = load_need + sb.get_load_need(level=level, context=context)
+            return load_need
