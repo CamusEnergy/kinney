@@ -64,11 +64,11 @@ func TestSOAPCall(t *testing.T) {
 	}
 }
 
-const envelopeXML = `<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/"><Header><string>header</string></Header><Body><string>body</string></Body></Envelope>`
+const envelopeXML = `<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/"><Header><string>foo</string></Header><Body><string>bar</string></Body></Envelope>`
 
 func TestMarshalUnmarshal(t *testing.T) {
-	header := "header"
-	body := "body"
+	header := "foo"
+	body := "bar"
 
 	b, err := marshalEnvelope(&header, &body)
 	if err != nil {

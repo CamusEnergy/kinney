@@ -5,6 +5,9 @@ import (
 	"math/big"
 )
 
+// API Guide (§ 6.3): "Use this call to retrieve the load and shed state for a
+// single station or custom station group.  This method also returns the load
+// for each port on a multi-port station."
 type GetLoadRequest struct {
 	XMLName xml.Name `xml:"urn:dictionary:com.chargepoint.webservices getLoad"`
 
@@ -31,18 +34,31 @@ type GetLoadResponse struct {
 		Ports []struct {
 			PortNumber string `xml:"portNumber,omitempty"`
 			UserID     string `xml:"userID,omitempty"`
-			// The empty string means that a contactless credit card
-			// was used to start the session.
+			// API Guide (§ 6.3.3): "Identifier of the credential
+			// used to start the session.  If it was a ChargePoint
+			// RFID card, it is the printed serial number on the
+			// card.  If it was the ChargePoint Mobile App, it will
+			// be the identifier displayed in the user’s mobile app.
+			// Contactless credit cards will be obviously be
+			// displayed as blank."
 			CredentialID *string `xml:"credentialID,omitempty"`
 
 			PortLoadKW big.Rat `xml:"portLoad,omitempty"`
 
-			// "1 = Shed, 0 = Not Shed"
+			// API Guide (§ 6.3.3): "1 = Shed, 0 = Not Shed"
 			ShedState uint8 `xml:"shedState"`
 
-			// Only one of the following two should be set.
-			// Maximum load allowed at the station.
+			// Only one of the following two fields should be set.
+
+			// API Guide (§ 6.3.3): "Maximum load allowed at the
+			// station (kW).  If percentShed was used in the last
+			// shedLoad call to this station, this parameter will be
+			// zero."
 			AllowedLoadKW *big.Rat `xml:"allowedLoad,omitempty"`
+			// API Guide (§ 6.3.3): "Percent of load currently being
+			// shed.  If allowedLoad was used in the last shedLoad
+			// call to this station, this parameter will be zero."
+			//
 			// Percent of load currently being shed (0 - 100).
 			PercentShed *uint8 `xml:"percentShed,omitempty"`
 		} `xml:"Port,omitempty"`

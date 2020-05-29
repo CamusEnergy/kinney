@@ -1,5 +1,15 @@
 // client is a reflection-based command-line interface to the ChargePoint API
-// client library.
+// client library.  For example:
+//
+//     $ ./client \
+//           --credentials="credentials.json" \
+//           --http_log="http_log.jsonl" \
+//           --url="http://example.com/chargepoint/api" \
+//           --method="GetStations" \
+//           --request='{"SearchQuery": {"StationGroupID": "1:23456"}}'
+//
+// This tool is intended to simply be illustrative and help with exploring the
+// ChargePoint API.
 package main
 
 import (
@@ -12,6 +22,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"time"
 
 	chargepoint "github.com/CamusEnergy/kinney/controller/ev/chargepoint/go"
 )
@@ -22,6 +33,9 @@ var (
 	url                 = flag.String("url", "", "URL of the ChargePoint API.  [required]")
 	method              = flag.String("method", "", "API method to call.  This must exactly match (case-sensitively) a method on the `client` type.  [required]")
 	request             = flag.String("request", "", "Request to send, specified as a JSON-marshalled instance of the request type.  [required]")
+
+	timeout = flag.Duration("timeout", time.Second, "Request timeout.")
+	outfile = flag.String("outfile", "", "Output file.  If empty, will write to stdout.")
 )
 
 func main() {
@@ -33,6 +47,11 @@ func main() {
 	}
 }
 
+// credentials is the schema that the `--credentials` file should conform to.
+// The source file will be parsed according to the `encoding/json` umarshaling
+// rules, which means that it should look something like the following:
+//
+//     {"APIKey": "<api-key>", "APIPassword": "<api-password>"}
 type credentials struct {
 	APIKey      string
 	APIPassword string
@@ -73,6 +92,7 @@ func mainInternal() error {
 	defer httpLog.Close()
 
 	// Create the API client.
+	log.Printf("Connection to SOAP endpoint: %s", *url)
 	c := chargepoint.NewClient(*url, creds.APIKey, creds.APIPassword, httpLog)
 
 	// Get the API method to call.
@@ -104,9 +124,25 @@ func mainInternal() error {
 	}
 	log.Printf("Using request: %#v", req)
 
+	// Create a call context with the timeout specified in the flag.
+	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
+	defer cancel()
+
 	// Call the API method via the reflected client method.
-	out := methodVal.Call([]reflect.Value{reflect.ValueOf(context.Background()), reflect.ValueOf(req)})
+	out := methodVal.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(req)})
 	respVal, errVal := out[0], out[1]
+
+	// Create the output writer.  If `--outfile` was not specified, then the
+	// output will be written to stdout.
+	fd := os.Stdout
+	if *outfile != "" {
+		outfile, err := os.Create(*outfile)
+		if err != nil {
+			return fmt.Errorf("error creating the output file: %w", err)
+		}
+		fd = outfile
+		defer outfile.Close()
+	}
 
 	// Handle the output parameters.
 	if !errVal.IsNil() {
@@ -114,7 +150,7 @@ func mainInternal() error {
 	} else if b, err := json.Marshal(respVal.Interface()); err != nil {
 		return fmt.Errorf("error marshalling response as JSON: %w", err)
 	} else {
-		fmt.Println(string(b))
+		fmt.Fprintln(fd, string(b))
 	}
 
 	return nil

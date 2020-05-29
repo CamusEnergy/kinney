@@ -2,6 +2,9 @@ package schema
 
 import "encoding/xml"
 
+// API Guide (§ 8.3): "Use this call to retrieve custom station groups for any
+// organization.  It returns an array of groups for a given organization and
+// lists the stations included in each group."
 type GetStationGroupsRequest struct {
 	XMLName xml.Name `xml:"urn:dictionary:com.chargepoint.webservices getStationGroups"`
 
