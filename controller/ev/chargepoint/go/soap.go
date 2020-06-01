@@ -90,25 +90,28 @@ func soapCall(ctx context.Context, c *http.Client, url string, reqHeader, reqBod
 	return nil
 }
 
+type inXML struct {
+		InnerXML []byte `xml:",innerxml"`
+}
+
 // envelope is a struct representation of a SOAP v1.1 "Envelope" message, which
 // can be marshalled and unmarshalled to/from valid SOAP requests and responses.
 type envelope struct {
 	XMLName xml.Name `xml:"http://schemas.xmlsoap.org/soap/envelope/ Envelope"`
 
-	Header struct {
-		InnerXML []byte `xml:",innerxml"`
-	} `xml:"Header"`
-	Body struct {
-		InnerXML []byte `xml:",innerxml"`
-	} `xml:"Body"`
+	Header *inXML `xml:"Header,omitempty"`
+	Body inXML `xml:"Body"`
 }
 
 func MarshalEnvelope(header, body interface{}) (b []byte, err error) {
 	envelope := &envelope{}
-
-	envelope.Header.InnerXML, err = xml.Marshal(header)
-	if err != nil {
-		return nil, fmt.Errorf("error marshalling SOAP header: %w", err)
+	
+	if header != nil {
+		envelope.Header = &inXML{}
+		envelope.Header.InnerXML, err = xml.Marshal(header)
+		if err != nil {
+			return nil, fmt.Errorf("error marshalling SOAP header: %w", err)
+		}
 	}
 	envelope.Body.InnerXML, err = xml.Marshal(body)
 	if err != nil {
@@ -124,6 +127,7 @@ func MarshalEnvelope(header, body interface{}) (b []byte, err error) {
 
 func UnmarshalEnvelope(b []byte, header, body interface{}) error {
 	envelope := &envelope{}
+	envelope.Header = &inXML{}
 	if err := xml.Unmarshal(b, envelope); err != nil {
 		return fmt.Errorf("error unmarshalling SOAP envelope: %w", err)
 	}
