@@ -20,7 +20,7 @@ type securityHeader struct {
 
 const passwordTypeText = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText"
 
-func newSecurityHeader(username, passwordValue string) *securityHeader {
+func NewSecurityHeader(username, passwordValue string) *securityHeader {
 	out := &securityHeader{
 		MustUnderstand: 1,
 		Username:       username,

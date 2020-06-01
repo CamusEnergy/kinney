@@ -18,7 +18,7 @@ func TestSOAPCall(t *testing.T) {
 	// the loopback interface, the address of which can be retrieved as
 	// `server.URL`.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if b, err := marshalEnvelope("respHeader", "respBody"); err != nil {
+		if b, err := MarshalEnvelope("respHeader", "respBody"); err != nil {
 			// There is no simple way to propogate this error to the
 			// calling code, so just panic.
 			panic(err)
@@ -43,8 +43,8 @@ func TestSOAPCall(t *testing.T) {
 		t.Errorf("json.Unmarshal(%q) = %q; want nil", httpLog.Bytes(), err)
 	}
 
-	expectedReqBody, _ := marshalEnvelope("reqHeader", "reqBody")
-	expectedRespBody, _ := marshalEnvelope("respHeader", "respBody")
+	expectedReqBody, _ := MarshalEnvelope("reqHeader", "reqBody")
+	expectedRespBody, _ := MarshalEnvelope("respHeader", "respBody")
 
 	// Validate the log entry that was written to the HTTP log strream.
 	expectedLogEntry := httpLogEntry{
@@ -70,7 +70,7 @@ func TestMarshalUnmarshal(t *testing.T) {
 	header := "foo"
 	body := "bar"
 
-	b, err := marshalEnvelope(&header, &body)
+	b, err := MarshalEnvelope(&header, &body)
 	if err != nil {
 		t.Errorf("marshalEnvelope(%#v, %#v) = %q; want nil", &header, &body, err)
 	} else if diff := cmp.Diff(envelopeXML, string(b)); diff != "" {
@@ -78,7 +78,7 @@ func TestMarshalUnmarshal(t *testing.T) {
 	}
 
 	var parsedHeader, parsedBody string
-	if err := unmarshalEnvelope(b, &parsedHeader, &parsedBody); err != nil {
+	if err := UnmarshalEnvelope(b, &parsedHeader, &parsedBody); err != nil {
 		t.Errorf("unmarshalEnvelope(%q) = %q; want nil", string(b), err)
 	} else if diff := cmp.Diff(header, parsedHeader); diff != "" {
 		t.Errorf("unmarshalEnvelope(%q) mismatch (-want +got):\n%s", string(b), diff)
