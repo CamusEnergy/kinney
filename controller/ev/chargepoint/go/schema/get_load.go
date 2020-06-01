@@ -8,11 +8,14 @@ import (
 // API Guide (§ 6.3): "Use this call to retrieve the load and shed state for a
 // single station or custom station group.  This method also returns the load
 // for each port on a multi-port station."
-type GetLoadRequest struct {
-	XMLName xml.Name `xml:"urn:dictionary:com.chargepoint.webservices getLoad"`
-
+type GetLoadRequestParams struct {
 	StationGroupID int32  `xml:"searchQuery>sgID,omitempty"`
 	StationID      string `xml:"searchQuery>stationID,omitempty"`
+}
+
+type GetLoadRequest struct {
+	XMLName xml.Name `xml:"urn:dictionary:com.chargepoint.webservices getLoad"`
+	GetLoadRequestParams
 }
 
 type GetLoadResponse struct {

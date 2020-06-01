@@ -11,9 +11,7 @@ import (
 // been granted rights by the station's owner."
 //
 // API Guide (§ 8.1.1): "Up to 500 stations will be returned by this method."
-type GetStationsRequest struct {
-	XMLName xml.Name `xml:"urn:dictionary:com.chargepoint.webservices getStations"`
-
+type GetStationsRequestParams struct {
 	SearchQuery struct {
 		// API Guide (§ 8.1.2): "A unique station identifier used in
 		// ChargePoint.  This identifier never changes, even when the
@@ -113,6 +111,11 @@ type GetStationsRequest struct {
 		SerialNumber          string      `xml:"serialNumber,omitempty"`
 		StationActivationDate xsdDateTime `xml:"stationActivationDate,omitempty"`
 	} `xml:"searchQuery"`
+}
+
+type GetStationsRequest struct {
+	XMLName xml.Name `xml:"urn:dictionary:com.chargepoint.webservices getStations"`
+	GetStationsRequestParams
 }
 
 type PricingSession struct {

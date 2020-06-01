@@ -4,9 +4,7 @@ import "encoding/xml"
 
 // API Guide (§ 6.2): "Use this call to clear the shed state from a single
 // station or group of stations."
-type ClearShedStateRequest struct {
-	XMLName xml.Name `xml:"urn:dictionary:com.chargepoint.webservices clearShedState"`
-
+type ClearShedStateRequestParams struct {
 	ShedQuery struct {
 		StationGroup *struct {
 			StationGroupID int32 `xml:"sgID"`
@@ -26,6 +24,10 @@ type ClearShedStateRequest struct {
 			} `xml:"Ports,omitempty"`
 		} `xml:"shedStation,omitempty"`
 	} `xml:"shedQuery"`
+}
+type ClearShedStateRequest struct {
+	XMLName xml.Name `xml:"urn:dictionary:com.chargepoint.webservices clearShedState"`
+	ClearShedStateRequestParams
 }
 
 type ClearShedStateResponse struct {

@@ -15,9 +15,7 @@ import (
 // - Port: Include the shedStation element and the Ports array; set the
 //   allowedLoadPerStation and percentShedPerStation parameters in the
 //   shedStation element to a null value or omit them from the request."
-type ShedLoadRequest struct {
-	XMLName xml.Name `xml:"urn:dictionary:com.chargepoint.webservices shedLoad"`
-
+type ShedLoadRequestParams struct {
 	ShedQuery struct {
 		ShedStationGroup *struct {
 			StationGroupID int32 `xml:"sgID"`
@@ -59,6 +57,11 @@ type ShedLoadRequest struct {
 		// power will be shed."
 		TimeInterval int32 `xml:"timeInterval"`
 	} `xml:"shedQuery"`
+}
+
+type ShedLoadRequest struct {
+	XMLName xml.Name `xml:"urn:dictionary:com.chargepoint.webservices shedLoad"`
+	ShedLoadRequestParams
 }
 
 type ShedLoadResponse struct {
