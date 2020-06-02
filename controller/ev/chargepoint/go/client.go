@@ -34,7 +34,7 @@ type client struct {
 func NewClient(url, apiKey, apiPassword string, httpLogWriter io.Writer) *client {
 	return &client{
 		url:            url,
-		securityHeader: newSecurityHeader(apiKey, apiPassword),
+		securityHeader: NewSecurityHeader(apiKey, apiPassword),
 		httpClient:     http.DefaultClient,
 		httpLogWriter:  httpLogWriter,
 	}

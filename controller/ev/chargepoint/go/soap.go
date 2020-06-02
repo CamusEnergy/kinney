@@ -34,7 +34,7 @@ type httpLogEntry struct {
 // `httpLogWriter` as a JSON-serialized `httpLogEntry` (in JSONL format: one
 // line per entry).
 func soapCall(ctx context.Context, c *http.Client, url string, reqHeader, reqBody, respHeader, respBody interface{}, httpLogWriter io.Writer) error {
-	reqBytes, err := marshalEnvelope(reqHeader, reqBody)
+	reqBytes, err := MarshalEnvelope(reqHeader, reqBody)
 	if err != nil {
 		return fmt.Errorf("error marshaling request: %w", err)
 	}
@@ -83,7 +83,7 @@ func soapCall(ctx context.Context, c *http.Client, url string, reqHeader, reqBod
 		return logEntry.Err
 	}
 
-	if err := unmarshalEnvelope(respBytes, respHeader, respBody); err != nil {
+	if err := UnmarshalEnvelope(respBytes, respHeader, respBody); err != nil {
 		logEntry.Err = fmt.Errorf("error unmarshaling response: %w", err)
 		return logEntry.Err
 	}
@@ -103,7 +103,7 @@ type envelope struct {
 	} `xml:"Body"`
 }
 
-func marshalEnvelope(header, body interface{}) (b []byte, err error) {
+func MarshalEnvelope(header, body interface{}) (b []byte, err error) {
 	envelope := &envelope{}
 
 	envelope.Header.InnerXML, err = xml.Marshal(header)
@@ -122,7 +122,7 @@ func marshalEnvelope(header, body interface{}) (b []byte, err error) {
 	return b, err
 }
 
-func unmarshalEnvelope(b []byte, header, body interface{}) error {
+func UnmarshalEnvelope(b []byte, header, body interface{}) error {
 	envelope := &envelope{}
 	if err := xml.Unmarshal(b, envelope); err != nil {
 		return fmt.Errorf("error unmarshalling SOAP envelope: %w", err)
