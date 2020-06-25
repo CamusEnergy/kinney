@@ -8,13 +8,14 @@ import (
 	"log"
 	"net/http"
 
-	"simulator/fullsim"
+	"github.com/CamusEnergy/kinney/controller/chargepoint/simulator"
 )
 
 var (
 	sgID = flag.Int("sgID", 1, "sgID is the station group ID, defaults to 1")
+	address = flag.String("address", "Somewhere, SomeState, SomeCountry", "address is the address of the EV charging facility")
+	capacity = flag.Float64("capacity", 8.0, "Maximum charge capacity of the ports")
 	numStations = flag.Int("numStations", 1, "numStations is the number of stations in this station group, defaults to 1")
-    numPorts = flag.Int("numPorts", 2, "num ports per station, has to be minimum 1, defaults to 2")
     simPort = flag.Int("simPort", 8089, "port on which to run simulator service, defaults to 8089")
 )
 
@@ -27,6 +28,7 @@ func main() {
 	if err := mainInternal(); err != nil {
 		log.Fatal(err)
 	}
+	cf = NewChargeFacility(sgID, numStations, float32(8.0))
 	// TODO handle the API specific operations
 	http.HandleFunc("/getLoad", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "getLoad, %q", html.EscapeString(r.URL.Path))
