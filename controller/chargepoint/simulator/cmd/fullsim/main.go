@@ -7,6 +7,9 @@ import (
 	"html"
 	"log"
 	"net/http"
+
+	"github.com/CamusEnergy/kinney/controller/chargepoint/simulator"
+
 )
 
 var (
@@ -18,27 +21,21 @@ var (
 )
 
 // TODO -- flesh the methods out using the Chargepoint structs, leverage Tzvetomir's code for all the SOAP stuff
-// Add support for the plugin and unplug events, those would need to be posts with form input ..
-
+// Alternately  work at a layer above SOAP, taking and returning Go structs, past SOAP input/output digestion
+// Add support simulating different vehicle arrival and departure patterns based on location (office|home|mall) 
 func main() {
 	// runs the main simulator logic
 	fmt.Println("Simulator: collecting parameters!")
 	if err := mainInternal(); err != nil {
 		log.Fatal(err)
 	}
-	cf = NewChargeFacility(sgID, numStations, float32(8.0))
+	var chargeFacility = simulator.NewChargeFacility(*sgID, *numStations, float32(8.0), *address)
+	fmt.Printf("Created a Charge Facility: %#v\n", chargeFacility)
 	// TODO handle the API specific operations
-	http.HandleFunc("/getLoad", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "getLoad, %q", html.EscapeString(r.URL.Path))
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "TODO - integrate with the SOAP handling code")
 	})
 
-	http.HandleFunc("/shed", func(w http.ResponseWriter, r *http.Request){
-			fmt.Fprintf(w, "shed")
-	})
-
-	http.HandleFunc("/clear", func(w http.ResponseWriter, r *http.Request){
-		fmt.Fprintf(w, "clear")
-	})
 	fmt.Printf("Simulator: running on port %d\n", *simPort)
 	log.Fatal(http.ListenAndServe(":8089", nil))
 
