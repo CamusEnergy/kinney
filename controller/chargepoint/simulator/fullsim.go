@@ -57,7 +57,7 @@ type port struct {
 type station struct {
 	ID              string
 	shed            bool
-	ports           [2]port
+	ports           [2] *port
 }
 
 // TODO -- make variable size using lists .. unsure if one can use a slice in a struct
@@ -81,9 +81,9 @@ type chargeFacility struct {
 func NewChargeFacility(sgID, numStations int,  maxCapacity float32, address string) chargeFacility {
 	var stations = [10]station{}
 	for i:= 0; i < numStations; i++ {
-		var ports = [2]port{}
+		var ports = [2] *port{}
 		for j:= 0; j < 2; j++ {
-			ports[j] = port{ID: j, maxCapacity: maxCapacity, capacity: maxCapacity, shed: false, session: nil}
+			ports[j] = & port{ID: j, maxCapacity: maxCapacity, capacity: maxCapacity, shed: false, session: nil}
 		}
 		// "1:NNNN" would be a US station ID
 		stations[i] = station{fmt.Sprintf("1:%d", i), false, ports}
@@ -93,8 +93,8 @@ func NewChargeFacility(sgID, numStations int,  maxCapacity float32, address stri
 	return cf
 }
 
-func uniquePortID(sgID int, station_id string,  port_id int) string {
-	return fmt.Sprintf("%d*%s*%d", sgID, station_id, port_id)
+func uniquePortID(sgID int, stationID string,  portID int) string {
+	return fmt.Sprintf("%d*%s*%d", sgID, stationID, portID)
 }
 
 func (cf *chargeFacility) showPorts(numStations int, msg string) {
@@ -126,7 +126,7 @@ func (cf *chargeFacility) Plugin(v *vehicle) bool {
 	return false
 }
 
-func (cf *chargeFacility) Unplugin(v *vehicle) bool {
+func (cf *chargeFacility) Unplug(v *vehicle) bool {
 	cf.m.Lock()
 	defer cf.m.Unlock()
 	var chargeSession *chargeSession

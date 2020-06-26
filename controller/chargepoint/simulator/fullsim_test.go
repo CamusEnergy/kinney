@@ -45,19 +45,19 @@ func TestPlugin(t *testing.T) {
 	}
 	//cf.showPorts(numStations, "After plugin 3 -- should not change anything because full")
 	want = true
-	if got := cf.Unplugin(&v1); got != want {
-		t.Errorf("cf.Unplugin() = %t, want %t", got, want)
+	if got := cf.Unplug(&v1); got != want {
+		t.Errorf("cf.Unplug() = %t, want %t", got, want)
 	}
 	want = true
-	if got := cf.Unplugin(&v2); got != want {
-		t.Errorf("cf.Unplugin() = %t, want %t", got, want)
+	if got := cf.Unplug(&v2); got != want {
+		t.Errorf("cf.Unplug() = %t, want %t", got, want)
 	}
-	//cf.showPorts(numStations, "After unplugin v2")
+	//cf.showPorts(numStations, "After unplug v2")
 	want = false
-	if got := cf.Unplugin(&v3); got != want {
-		t.Errorf("cf.Unplugin() for v3 = %t, want %t", got, want)
+	if got := cf.Unplug(&v3); got != want {
+		t.Errorf("cf.Unplug() for v3 = %t, want %t", got, want)
 	}
-	//cf.showPorts(numStations, "After unplugin v3")
+	//cf.showPorts(numStations, "After unplug v3")
 	want = true
 }*/
 
