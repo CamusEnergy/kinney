@@ -1,10 +1,9 @@
 package simulator
 
 import (
-	"fmt"
 	"testing"
 )
-/*
+
 func TestVehicleCreation(t *testing.T) {
 	var v = NewVehicle(1234,"Someone",75.0, 10.0, 6.0)
 	var want = float32(75.0)
@@ -59,40 +58,12 @@ func TestPlugin(t *testing.T) {
 	}
 	//cf.showPorts(numStations, "After unplug v3")
 	want = true
-}*/
+}
 
 func TestShed(t *testing.T) {
 	var cf = NewChargeFacility(1234, 2, 8.0, "somewhere groovy")
-	//cf.showPorts(2, "============ pre shed ============")
-	//var valWant = float32(3.0)
-	//cf.Shed(valWant, false)
-	cf.sg.shed = true
-	for i := 0; i < cf.sg.numStations; i++ {
-		var s = cf.sg.stations[i]
-		s.shed = true
-		for j, p := range s.ports {
-			fmt.Printf("Before Station-Port[%d, %d] = (%#v), capacity: %f, max_capacity %f\n", i, j, p.session, p.capacity, p.maxCapacity)
-			p.capacity = float32(3.0)
-			fmt.Printf("After Station-Port[%d, %d] = (%#v), capacity: %f, max_capacity %f\n", i, j, p.session, p.capacity, p.maxCapacity)
-		}
-	}
-	//cf.showPorts(2, "============ post shed ============")
-	cf.sg.shed = false
-	for i := 0; i < cf.sg.numStations; i++ {
-		var s = cf.sg.stations[i]
-		s.shed = false
-		for j, p := range s.ports {
-			fmt.Printf("Before clear Station-Port[%d, %d] = (%#v), capacity: %f, max_capacity %f\n", i, j, p.session, p.capacity, p.maxCapacity)
-			p.capacity = p.maxCapacity
-			p.shed = false
-			fmt.Printf("After clear Station-Port[%d, %d] = (%#v), capacity: %f, max_capacity %f\n", i, j, p.session, p.capacity, p.maxCapacity)
-
-
-		}
-	}
-	cf.showPorts(2, "============ post clear ============")
-/*
 	var want = false
+
 	if got := cf.sg.shed; got != want {
 		t.Errorf("Pre shed  flag = %t, want %t", got, want)
 	}
@@ -106,19 +77,19 @@ func TestShed(t *testing.T) {
 	want = true
 	valWant = float32(3.0)
 	cf.Shed(valWant, false)
-	cf.showPorts(2, "============ post shed ============")
 	// shedding load to valWant
-	// checking shed flag first
+	// checking shed flag
 	if got := cf.sg.shed; got != want {
 		t.Errorf("shed flag = %t, want %t", got, want)
 	}
-	// check if capacity reduced
+	// check if capacity curtailed down from maxCapacity to valWant
 	valGot = cf.sg.stations[0].ports[0].capacity
 	if valGot != valWant {
 		t.Errorf("shed capacity = %f want %f", valGot, valWant)
-	}*/
+	}
 }
-/*
+
+
 func TestClear(t *testing.T) {
 	var cf = NewChargeFacility(1234, 1, 8.0, "somewhere groovy")
 	cf.Shed(float32(5.0), false)
@@ -139,4 +110,4 @@ func TestClear(t *testing.T) {
 	if p.capacity != p.maxCapacity{
 		t.Errorf("Post clear, capacity must equal max_capacity!")
 	}
-}*/
+}
