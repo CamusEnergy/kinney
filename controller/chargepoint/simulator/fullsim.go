@@ -8,21 +8,17 @@ import (
 	"time"
 )
 
-// TODO test without SOAP etc, making directly the method calls
-// use sleep to move in time .. but that would be slow
-// may want to add a unit time to fast forward .. maintaining an internal clock and from there reading time -- nice!
+// TODO malini
+// may want to add a unit time to fast forward .. maintaining an internal clock and from there reading time
 // define a little fast_forward_function (n int, units seconds|minutes|hours|days)
 
-var (
-	emptySession chargeSession
-)
 
 type vehicle struct {
 	ID                      		int
 	ownerID                        	string
 	capacity                        float32
-	currCharge                     float32
-	chargeRate                     float32
+	currCharge                     	float32
+	chargeRate                     	float32
 }
 
 func NewVehicle(ID int, ownerID string, capacity, currCharge, chargeRate float32) vehicle {
@@ -36,7 +32,7 @@ func NewVehicle(ID int, ownerID string, capacity, currCharge, chargeRate float32
 
 type chargeSession struct {
 	ID                      int
-	vehicle                 vehicle
+	vehicle                 *vehicle
 	start                   time.Time
 	lastComputed			time.Time
 	end                     time.Time
@@ -44,10 +40,10 @@ type chargeSession struct {
 	fullPortID           	string
 }
 
-func newChargeSession(ID int, v vehicle, fullPortID string) chargeSession {
+func newChargeSession(ID int, v *vehicle, fullPortID string) *chargeSession {
 	var now = time.Now()
 	fmt.Printf("Starting charge session for vehicle: %+v\n", v)
-	return chargeSession{ID, v, now, now, now, 0.0, fullPortID }
+	return &chargeSession{ID, v, now, now, now, 0.0, fullPortID }
 }
 
 type port struct {
@@ -55,7 +51,7 @@ type port struct {
 	maxCapacity    			float32
 	capacity                float32
 	shed                    bool
-	session                 chargeSession
+	session                 *chargeSession
 }
 
 type station struct {
@@ -67,13 +63,14 @@ type station struct {
 // TODO -- make variable size using lists .. unsure if one can use a slice in a struct
 type stationGroup struct {
 	sgID            int
-	stations        [2]station
-	numStations	int
+	numStations		int
+	stations        [10]station
 	shed        	bool
 }
 
 type chargeFacility struct {
 	sg 					stationGroup
+	address             string
 	created				time.Time
 	now					time.Time
 	completedSessions 	list.List
@@ -81,42 +78,46 @@ type chargeFacility struct {
 	m  					sync.Mutex
 }
 
-func NewChargeFacility(sgID, numStations int,  maxCapacity float32) chargeFacility {
-	var stations = [2]station{}
+func NewChargeFacility(sgID, numStations int,  maxCapacity float32, address string) chargeFacility {
+	var stations = [10]station{}
 	for i:= 0; i < numStations; i++ {
 		var ports = [2]port{}
 		for j:= 0; j < 2; j++ {
-			ports[j] = port{ID: j, maxCapacity: maxCapacity, capacity: maxCapacity, shed: false, session: emptySession}
+			ports[j] = port{ID: j, maxCapacity: maxCapacity, capacity: maxCapacity, shed: false, session: nil}
 		}
 		// "1:NNNN" would be a US station ID
 		stations[i] = station{fmt.Sprintf("1:%d", i), false, ports}
 	}
-	var sg = stationGroup{sgID: sgID, stations: stations, shed: false}
-	return chargeFacility{sg: sg, lastSessionID: 0}
+	var sg = stationGroup{sgID: sgID, numStations: numStations, stations: stations, shed: false}
+	var cf =  chargeFacility{sg: sg, address: address}
+	return cf
 }
 
 func uniquePortID(sgID int, station_id string,  port_id int) string {
 	return fmt.Sprintf("%d*%s*%d", sgID, station_id, port_id)
 }
 
-func (cf chargeFacility) showPorts() {
-	for i, s := range cf.sg.stations {
+func (cf *chargeFacility) showPorts(numStations int, msg string) {
+	fmt.Printf("-------------%s------------\n", msg)
+	for i:=0; i < numStations; i++ {
+		var s = cf.sg.stations[i]
 		for j, p := range s.ports {
-			fmt.Printf("Station-Port[%d, %d] = vehicle(%d)\n", i, j, p.session.vehicle.ID)
+			fmt.Printf("Station-Port[%d, %d] = (%#v), capacity: %f, max_capacity %f\n", i, j, p.session, p.capacity, p.maxCapacity)
+			fmt.Printf("%#v\n", p)
 		}
 	}
 }
 
-func (cf chargeFacility) Plugin(v vehicle) bool {
+func (cf *chargeFacility) Plugin(v *vehicle) bool {
 	cf.m.Lock()
 	defer cf.m.Unlock()
-	for _, s := range cf.sg.stations {
-		for _, p := range s.ports {
-			if p.session == emptySession {
+	for i := 0; i < cf.sg.numStations; i++ {
+		var s = cf.sg.stations[i]
+		for j := 0; j < 2; j++ {
+			var p = s.ports[j]
+			if cf.sg.stations[i].ports[j].session == nil {
 				cf.lastSessionID = cf.lastSessionID + 1 // obtain the next new session ID
-				fmt.Printf("\nBefore port session = %+v\n", p.session)
-				p.session = newChargeSession(cf.lastSessionID, v, uniquePortID(cf.sg.sgID, s.ID, p.ID))
-				fmt.Printf("After port session = %+v\n\n", p.session)
+				cf.sg.stations[i].ports[j].session = newChargeSession(cf.lastSessionID, v, uniquePortID(cf.sg.sgID, s.ID, p.ID))
 				return true
 			}
 		}
@@ -125,19 +126,25 @@ func (cf chargeFacility) Plugin(v vehicle) bool {
 	return false
 }
 
-func (cf chargeFacility) Unplug(v vehicle) bool {
+func (cf *chargeFacility) Unplugin(v *vehicle) bool {
 	cf.m.Lock()
 	defer cf.m.Unlock()
-	var chargeSession = emptySession
-	for _, s := range cf.sg.stations {
-		for _, p := range s.ports {
-			if (p.session != emptySession) && (p.session.vehicle.ID == v.ID) {
-				chargeSession = p.session
-				cf.completedSessions.PushFront(chargeSession)
-				p.session = emptySession
+	var chargeSession *chargeSession
+	for i := 0; i < cf.sg.numStations; i++ {
+		for j := 0; j < 2; j++ {
+			if cf.sg.stations[i].ports[j].session!= nil {
+				if  cf.sg.stations[i].ports[j].session.vehicle == v {
+					chargeSession = cf.sg.stations[i].ports[j].session
+					// update that session is complete
+					chargeSession.end = time.Now()
+					cf.completedSessions.PushFront(chargeSession)
+					cf.sg.stations[i].ports[j].session = nil
+					return true
+				}
 			}
 		}
 	}
+	fmt.Println("No such vehicle currently plugged in")
 	return false
 }
 
@@ -146,15 +153,17 @@ func (cf chargeFacility) Unplug(v vehicle) bool {
 // Is the vehicle fully charged?
 //if (now - session-start) * charge_rate + current_charge
 // TODO -- return in the ChargePoint getLoad struct, full details, total and per port across all stations
-func (cf chargeFacility) GetLoad() float32 {
+func (cf *chargeFacility) GetLoad() float32 {
+	cf.m.Lock()
+	defer cf.m.Unlock()
 	var now = time.Now()
 	var totalLoad = float32(0.0)
 	for i := 0; i < cf.sg.numStations; i++ {
 		var s = cf.sg.stations[i]
-		for j, p := range s.ports {
+		for _, p := range s.ports {
 			var portLoad = float32(0.0)
 			// is a vehicle connected at this port?
-			if p.session != emptySession {
+			if p.session != nil {
 				var v = p.session.vehicle
 				// what is the vehicle's charge rate? the lower of the port capacity and the vehicle's charge rate
 				var vehicleChargeRate = v.chargeRate
@@ -177,35 +186,36 @@ func (cf chargeFacility) GetLoad() float32 {
 				p.session.lastComputed = now
 				totalLoad = portLoad + totalLoad
 			}
-			fmt.Printf("station[%d] Port [%d] load = %f\n", i, j, portLoad)
 		}
 	}
     return totalLoad
 }
 
-func (cf chargeFacility) Shed(amount float32, percent bool) {
+func (cf *chargeFacility) Shed(amount float32, percent bool) {
+	fmt.Printf("enter shed with amount = %f\n", amount)
+	cf.m.Lock()
+	defer cf.m.Unlock()
 	cf.sg.shed = true
 	var s station
 	for i := 0; i < cf.sg.numStations; i++ {
 		s = cf.sg.stations[i]
-		fmt.Printf("Station[%d] shed", i)
-		fmt.Printf("%v", s)
 		s.shed = true
-		for j, p := range s.ports {
-			fmt.Printf("Prior to shed port[%d] capacity = %f\n", j, p.capacity)
+		for _, p := range s.ports {
 			if percent {
 				p.capacity = p.maxCapacity * amount * 0.01
 			} else {
 				p.capacity = amount
 			}
-			fmt.Printf("Post shed port[%d] capacity = %f\n", j, p.capacity)
 		}
 	}
 }
 
-func (cf chargeFacility)Clear() {
+func (cf *chargeFacility) Clear() {
+	cf.m.Lock()
+	defer cf.m.Unlock()
 	cf.sg.shed = false
-	for i, s := range cf.sg.stations {
+	for i := 0; i < cf.sg.numStations; i++  {
+		var s = cf.sg.stations[i]
 		s.shed = false
 		for j, p := range s.ports {
 			p.shed = false

@@ -7,8 +7,6 @@ import (
 	"html"
 	"log"
 	"net/http"
-
-	"github.com/CamusEnergy/kinney/controller/chargepoint/simulator"
 )
 
 var (
