@@ -23,7 +23,7 @@ type vehicle struct {
 
 func NewVehicle(ID int, ownerID string, capacity, currCharge, chargeRate float32) vehicle {
 	if (0 == ID)  || ("" == ownerID)  || (0.0 == capacity) || (currCharge < 0.0) || (chargeRate <= 0.0) {
-		log.Fatal("Invalid input provided to initialize a vehicle ID =  %d," +
+		log.Fatalf("Invalid input provided to initialize a vehicle ID =  %d," +
 			" ownerID = %s, capacity %f, currCharge: %f, chargeRate = %f",
 			ID, ownerID, capacity, currCharge, chargeRate)
 	}
