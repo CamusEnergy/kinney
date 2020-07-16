@@ -12,7 +12,7 @@ func TestVehicleCreation(t *testing.T) {
 	}
 }
 func TestChargeFacilityCreation(t *testing.T) {
-	var cf = NewChargeFacility(1234, 1,8.0, "somewhere groovy")
+	var cf = NewChargeFacility(1234, 1,2, 8.0, "somewhere groovy")
 	var want = float32(0.0)
 	if got := cf.GetLoad(); got != want {
 			t.Errorf("cf.GetLoad() = %f, want %f", got, want)
@@ -24,7 +24,7 @@ func TestPlugin(t *testing.T) {
 	var v1 = NewVehicle(11,"Someone One",75.0, 10.0, 6.5)
 	var v2 = NewVehicle(22,"Someone Two",45.0, 20.0, 6.0)
 	var v3 = NewVehicle(33,"Someone Three",50.0, 40.0, 5.0)
-	var cf = NewChargeFacility(1234, numStations,8.0, "somewhere groovy")
+	var cf = NewChargeFacility(1234, numStations,2, 8.0, "somewhere groovy")
 	//cf.showPorts(numStations, "Before plugin")
 	var want = true
 	if got := cf.Plugin(&v1); got != want {
@@ -61,7 +61,7 @@ func TestPlugin(t *testing.T) {
 }
 
 func TestShed(t *testing.T) {
-	var cf = NewChargeFacility(1234, 2, 8.0, "somewhere groovy")
+	var cf = NewChargeFacility(1234, 2, 2, 8.0, "somewhere groovy")
 	var want = false
 
 	if got := cf.sg.shed; got != want {
@@ -91,7 +91,7 @@ func TestShed(t *testing.T) {
 
 
 func TestClear(t *testing.T) {
-	var cf = NewChargeFacility(1234, 1, 8.0, "somewhere groovy")
+	var cf = NewChargeFacility(1234, 1, 2, 8.0, "somewhere groovy")
 	cf.Shed(float32(5.0), false)
 	var want = true
 	if got := cf.sg.shed; got != want {

@@ -57,14 +57,14 @@ type port struct {
 type station struct {
 	ID              string
 	shed            bool
-	ports           [2] *port
+	ports           [] *port
 }
 
 // TODO -- make variable size using lists .. unsure if one can use a slice in a struct
 type stationGroup struct {
 	sgID            int
 	numStations		int
-	stations        [10]station
+	stations        []station
 	shed        	bool
 }
 
@@ -78,12 +78,12 @@ type chargeFacility struct {
 	m  					sync.Mutex
 }
 
-func NewChargeFacility(sgID, numStations int,  maxCapacity float32, address string) chargeFacility {
-	var stations = [10]station{}
+func NewChargeFacility(sgID, numStations int,  numPorts int, maxCapacity float32, address string) chargeFacility {
+	var stations = make([]station, numStations)
 	for i:= 0; i < numStations; i++ {
-		var ports = [2] *port{}
+		var ports = make([]*port, numPorts)
 		for j:= 0; j < 2; j++ {
-			ports[j] = & port{ID: j, maxCapacity: maxCapacity, capacity: maxCapacity, shed: false, session: nil}
+			ports[j] = &port {ID: j, maxCapacity: maxCapacity, capacity: maxCapacity, shed: false, session: nil}
 		}
 		// "1:NNNN" would be a US station ID
 		stations[i] = station{fmt.Sprintf("1:%d", i), false, ports}
