@@ -305,18 +305,16 @@ func TestMarshal(t *testing.T) {
 			      <sgID>1234</sgID>
 			      <allowedLoadPerStation>0.5</allowedLoadPerStation>
 			    </shedGroup>
-			    <shedStation>
-			      <stationID></stationID>
-			      <Ports></Ports>
-			    </shedStation>
 			    <timeInterval>0</timeInterval>
 			  </shedQuery>
 			</shedLoad>`,
 		},
 		"ShedLoadRequest_StationID": {
 			&ShedLoadRequest{
-				StationID:            "station id",
-				StationAllowedLoadKW: "0.5",
+				Station: &ShedLoadRequest_Station{
+					StationID:     "station id",
+					AllowedLoadKW: "0.5",
+				},
 			},
 			`<shedLoad xmlns="urn:dictionary:com.chargepoint.webservices">
 			  <shedQuery>
@@ -324,7 +322,6 @@ func TestMarshal(t *testing.T) {
 			    <shedStation>
 			      <stationID>station id</stationID>
 			      <allowedLoadPerStation>0.5</allowedLoadPerStation>
-			      <Ports></Ports>
 			    </shedStation>
 			    <timeInterval>0</timeInterval>
 			  </shedQuery>
@@ -332,9 +329,13 @@ func TestMarshal(t *testing.T) {
 		},
 		"ShedLoadRequest_Ports": {
 			&ShedLoadRequest{
-				StationID: "station id",
-				Ports: []ShedLoadRequest_Port{
-					{PortNumber: "port number", AllowedLoadKW: "0.5"},
+				Station: &ShedLoadRequest_Station{
+					StationID: "station id",
+					Ports: &ShedLoadRequest_Station_Ports{
+						Ports: []ShedLoadRequest_Station_Ports_Port{
+							{PortNumber: "port number", AllowedLoadKW: "0.5"},
+						},
+					},
 				},
 			},
 			`<shedLoad xmlns="urn:dictionary:com.chargepoint.webservices">

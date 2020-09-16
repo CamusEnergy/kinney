@@ -33,12 +33,7 @@ type ShedLoadRequest struct {
 	// be set to zero until the shed state is cleared."
 	StationGroupPercentShed *int32 `xml:"shedQuery>shedGroup>percentShedPerStation,omitempty"`
 
-	StationID string `xml:"shedQuery>shedStation>stationID"`
-	// Only one of the following two fields may be set.
-	StationAllowedLoadKW string `xml:"shedQuery>shedStation>allowedLoadPerStation,omitempty"`
-	StationPercentShed   *int32 `xml:"shedQuery>shedStation>percentShedPerStation,omitempty"`
-
-	Ports []ShedLoadRequest_Port `xml:"shedQuery>shedStation>Ports>Port,omitempty"`
+	Station *ShedLoadRequest_Station `xml:"shedQuery>shedStation,omitempty"`
 
 	// API Guide (§ 6.1.2): "Time interval in minutes.  A value of 0
 	// indicates that there is no specified duration for which the power
@@ -46,7 +41,20 @@ type ShedLoadRequest struct {
 	TimeInterval int32 `xml:"shedQuery>timeInterval"`
 }
 
-type ShedLoadRequest_Port struct {
+type ShedLoadRequest_Station struct {
+	StationID string `xml:"stationID"`
+	// Only one of the following two fields may be set.
+	AllowedLoadKW string `xml:"allowedLoadPerStation,omitempty"`
+	PercentShed   *int32 `xml:"percentShedPerStation,omitempty"`
+
+	Ports *ShedLoadRequest_Station_Ports `xml:"Ports,omitempty"`
+}
+
+type ShedLoadRequest_Station_Ports struct {
+	Ports []ShedLoadRequest_Station_Ports_Port `xml:"Port"`
+}
+
+type ShedLoadRequest_Station_Ports_Port struct {
 	PortNumber    string `xml:"portNumber"`
 	AllowedLoadKW string `xml:"allowedLoadPerPort"`
 	PercentShed   *int32 `xml:"percentShedPerPort"`
