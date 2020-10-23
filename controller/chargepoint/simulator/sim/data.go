@@ -40,18 +40,33 @@ type chargeSession struct {
 	samples []*chargeSample
 }
 
+const (
+	shedTypeNone = iota
+	shedTypeKW
+	shedTypePercent
+)
+
+type shedPower struct {
+	shedType    int
+	allowedKW   float32
+	percentShed int32
+}
+
 type chargePort struct {
-	sched    int
-	capacity float32 // KWh
-	recorded []*chargeSession
-	now      *currentCharge
+	max_capacity     float32 // KWh
+	current_capacity float32 // KWh
+	shed             *shedPower
+	recorded         []*chargeSession
+	now              *currentCharge
+	shedTimer        *time.Timer
 }
 
 type chargeStation struct {
-	geo     *locGeo
-	name    *string
-	address *string
-	ports   map[string]*chargePort
+	geo      *locGeo
+	name     *string
+	address  *string
+	ports    map[string]*chargePort
+	shedType int
 }
 
 type chargeGetLoad interface {
@@ -61,9 +76,10 @@ type chargeGetLoad interface {
 }
 
 type chargeGroup struct {
-	name     *string
-	stations map[string]*chargeStation
-	getLoad  chargeGetLoad
+	name        *string
+	stations    map[string]*chargeStation
+	getLoad     chargeGetLoad
+	recalcTimer *time.Timer
 }
 
 type chargeFacility struct {

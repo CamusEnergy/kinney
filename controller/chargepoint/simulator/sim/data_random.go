@@ -46,8 +46,8 @@ func (g getLoadRandom) newChargeSession(port *chargePort, t time.Time) {
 
 	// Current charge rate, limited to max port capacity
 	port.now.chargeRate = port.now.vehicle.chargeRate * (port.now.vehicle.capacity - port.now.vehicle.currCharge)
-	if port.now.chargeRate > port.capacity {
-		port.now.chargeRate = port.capacity
+	if port.now.chargeRate > port.current_capacity {
+		port.now.chargeRate = port.current_capacity
 	}
 
 	fmt.Printf("New vehicle [%s]\n", *port.now.vehicle.driverId)
@@ -64,8 +64,8 @@ func (g getLoadRandom) calcNextLoad(port *chargePort, t time.Time) {
 		port.now = nil
 	} else {
 		port.now.chargeRate = port.now.vehicle.chargeRate * (port.now.vehicle.capacity - port.now.vehicle.currCharge)
-		if port.now.chargeRate > port.capacity {
-			port.now.chargeRate = port.capacity
+		if port.now.chargeRate > port.current_capacity {
+			port.now.chargeRate = port.current_capacity
 		}
 		port.now.lastComputed = time.Now()
 	}

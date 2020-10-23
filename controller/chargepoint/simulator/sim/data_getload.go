@@ -31,11 +31,26 @@ func getStationLoad(group *chargeGroup, st *chargeStation, stId *string, res *sc
 				rport.UserID = *v.driverId
 				rport.CredentialID = v.credentialID
 			}
+			var shedState uint8
+			if port.shed != nil && port.shed.shedType != shedTypeNone {
+				shedState = 1
+				if port.shed.shedType == shedTypeKW {
+					rport.AllowedLoadKW = fmt.Sprintf("%f", port.shed.allowedKW)
+				} else {
+					prShed := uint8(port.shed.percentShed)
+					rport.PercentShed = &prShed
+				}
+			} else {
+				shedState = 0
+			}
+			rport.ShedState = &shedState
 			sret.Ports = append(sret.Ports, rport)
 		}
 	}
 	sret.StationLoadKW = fmt.Sprintf("%f", sload)
-	res.Stations = append(res.Stations, sret)
+	if res != nil {
+		res.Stations = append(res.Stations, sret)
+	}
 	return sload, nil
 }
 
@@ -46,9 +61,6 @@ func (e *EVChargers) getNextLoad(resp *schema.GetLoadResponse,
 	if group == nil || stationID == nil {
 		return fmt.Errorf("Station not found")
 	}
-
-	e.lock.Lock()
-	defer e.lock.Unlock()
 
 	if *stationID == "" {
 		for i, s := range group.stations {
@@ -66,7 +78,9 @@ func (e *EVChargers) getNextLoad(resp *schema.GetLoadResponse,
 		}
 	}
 
-	resp.StationGroupLoadKW = fmt.Sprintf("%f", gload)
+	if resp != nil {
+		resp.StationGroupLoadKW = fmt.Sprintf("%f", gload)
+	}
 
 	return nil
 }

@@ -123,7 +123,8 @@ func genRandom(param *randomParams, e *EVChargers) {
 				for p := 0; p < nChargePorts; p++ {
 					str := strconv.FormatInt(int64(p), 10)
 					port := e.getChargePort(&facility, &group, &station, &str)
-					port.capacity = defPortCapacity
+					port.max_capacity = defPortCapacity
+					port.current_capacity = defPortCapacity
 				}
 			}
 		}

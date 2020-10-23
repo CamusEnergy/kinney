@@ -42,6 +42,9 @@ func (s SimulatorServer) GetLoad(req *schema.GetLoadRequest) (*schema.GetLoadRes
 		break
 	}
 
+	s.Ev.lock.Lock()
+	defer s.Ev.lock.Unlock()
+
 	err = s.Ev.getNextLoad(resp, group, &req.StationID)
 	if err != nil {
 		resp.ResponseCode = "102"
@@ -193,44 +196,157 @@ func (s SimulatorServer) GetCPNInstances(req *schema.GetCPNInstancesRequest) (*s
 }
 
 func (s SimulatorServer) ShedLoad(req *schema.ShedLoadRequest) (*schema.ShedLoadResponse, error) {
-	resp := &schema.ShedLoadResponse{}
+	var shedKW *string
+	var shedPercent *int32
+	var portShed map[string]*shedPower
+	var shed *shedPower
+	portShedKW := false
+	portSchedPercent := false
+	success := false
 
-	resp.ResponseCode = "188"
-	resp.ResponseText = "Not implemented yet "
+	resp := &schema.ShedLoadResponse{Success: 0,
+		StationGroupID: req.StationGroupID,
+		StationID:      req.StationID,
+	}
+	resp.ResponseCode = "171"
+
+	if len(req.StationGroupAllowedLoadKW) > 0 {
+		shedKW = &req.StationGroupAllowedLoadKW
+	}
+	if req.StationGroupPercentShed != nil {
+		if shedKW != nil {
+			resp.ResponseText = "shed KW requested, invalid StationGroupPercentShed"
+			return resp, nil
+		}
+		shedPercent = req.StationGroupPercentShed
+	}
+
+	if len(req.StationID) > 0 && (shedKW != nil || shedPercent != nil) {
+		resp.ResponseText = "shed requested for all stations in the group, invalid StationID"
+		return resp, nil
+	}
+
+	if len(req.StationAllowedLoadKW) > 0 {
+		if shedKW != nil || shedPercent != nil {
+			resp.ResponseText = "shed already requested, invalid StationAllowedLoadKW"
+			return resp, nil
+		}
+		shedKW = &req.StationAllowedLoadKW
+	}
+	if req.StationPercentShed != nil {
+		if shedKW != nil || shedPercent != nil {
+			resp.ResponseText = "shed already requested, invalid StationPercentShed"
+			return resp, nil
+		}
+		shedPercent = req.StationPercentShed
+	}
+
+	if len(req.Ports) > 0 {
+		if shedKW != nil || shedPercent != nil {
+			resp.ResponseText = "station shed already requested, invalid Ports"
+			return resp, nil
+		}
+		portShed = make(map[string]*shedPower)
+		for _, p := range req.Ports {
+			if len(p.AllowedLoadKW) > 0 {
+				if portSchedPercent {
+					resp.ResponseText = "port % shed already requested, invalid AllowedLoadKW"
+					return resp, nil
+				}
+				if power, err := strconv.ParseFloat(p.AllowedLoadKW, 32); err == nil {
+					portShedKW = true
+					portShed[p.PortNumber] = &shedPower{
+						shedType:  shedTypeKW,
+						allowedKW: float32(power),
+					}
+				}
+			}
+			if p.PercentShed != nil {
+				if portShedKW {
+					resp.ResponseText = "port KW shed already requested, invalid PercentShed"
+					return resp, nil
+				}
+				portSchedPercent = true
+				portShed[p.PortNumber] = &shedPower{
+					shedType:    shedTypePercent,
+					percentShed: *p.PercentShed,
+				}
+			}
+		}
+	}
+
+	s.Ev.lock.Lock()
+	defer s.Ev.lock.Unlock()
+
+	if shedKW != nil {
+		if power, err := strconv.ParseFloat(*shedKW, 32); err == nil {
+			shed = &shedPower{
+				shedType:  shedTypeKW,
+				allowedKW: float32(power),
+			}
+		}
+	} else if shedPercent != nil {
+		shed = &shedPower{
+			shedType:    shedTypePercent,
+			percentShed: *shedPercent,
+		}
+	}
+
+	if shed != nil || portShed != nil {
+		success = s.Ev.shedLoad(&req.StationGroupID, &req.StationID, shed, &portShed, req.TimeInterval)
+	}
+
+	if success {
+		resp.Success = 1
+		resp.ResponseCode = "100"
+		resp.ResponseText = "OK"
+		if shedKW != nil {
+			resp.AllowedLoadKW = *shedKW
+		}
+		resp.PercentShed = shedPercent
+		for _, p := range req.Ports {
+			resp.Ports = append(resp.Ports, schema.ShedLoadResponse_Port{
+				PortNumber:    p.PortNumber,
+				AllowedLoadKW: p.AllowedLoadKW,
+				PercentShed:   p.PercentShed,
+			})
+		}
+	} else {
+		resp.ResponseCode = "126"
+		resp.ResponseText = "Failed to shed requested load"
+	}
 
 	return resp, nil
 }
 
 func (s SimulatorServer) ClearShedState(req *schema.ClearShedStateRequest) (*schema.ClearShedStateResponse, error) {
-	resp := &schema.ClearShedStateResponse{}
+	resp := &schema.ClearShedStateResponse{Success: false}
 
-	resp.Success = false
 	if req.StationGroupID != nil {
 		resp.StationGroupID = *req.StationGroupID
 	}
 	if req.StationID != nil {
 		resp.StationID = *req.StationID
 	}
-	for _, org := range s.Ev.facilities {
-		for i, g := range org.groups {
-			id, err := strconv.ParseInt(i, 10, 32)
-			if err != nil {
-				continue
-			}
-			if req.StationGroupID != nil && *req.StationGroupID != int32(id) {
-				continue
-			}
 
-			for k, st := range g.stations {
-				if req.StationID != nil && *req.StationID != k {
-					continue
-				}
-				resp.Success = true
-				for _, pr := range st.ports {
-					pr.sched = 0
-				}
-			}
-		}
+	if len(req.PortNumbers) > 0 && req.StationID == nil {
+		resp.ResponseCode = "119"
+		resp.ResponseText = "Invalid Station ID"
+		return resp, nil
 	}
+
+	s.Ev.lock.Lock()
+	defer s.Ev.lock.Unlock()
+
+	resp.Success = s.Ev.clearShedLoad(req.StationGroupID, req.StationID, &req.PortNumbers)
+
+	if resp.Success {
+		resp.ResponseCode = "100"
+		resp.ResponseText = "OK"
+	} else {
+		resp.ResponseCode = "127"
+		resp.ResponseText = "Failed to restore the load"
+	}
+
 	return resp, nil
 }
