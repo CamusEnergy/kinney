@@ -45,7 +45,7 @@ func (s SimulatorServer) GetLoad(req *schema.GetLoadRequest) (*schema.GetLoadRes
 	err = s.Ev.getNextLoad(resp, group, &req.StationID)
 	if err != nil {
 		resp.ResponseCode = "102"
-		resp.ResponseText = "No load recorded"
+		resp.ResponseText = err.Error()
 	} else {
 		resp.ResponseCode = "100"
 		resp.ResponseText = "OK"
